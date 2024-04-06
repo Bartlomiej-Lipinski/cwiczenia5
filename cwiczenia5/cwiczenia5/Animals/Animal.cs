@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using cwiczenia5.Enums;
 
-namespace cwiczenia5.Models;
+namespace cwiczenia5.Animals;
 
 public class Animal
 {
@@ -15,5 +15,4 @@ public class Animal
     [Required]
     [EnumDataType(typeof(FurrColor))]
     public FurrColor furrColor { get; set; }
-    public ICollection<Visit>? Visits { get; set; }
 }

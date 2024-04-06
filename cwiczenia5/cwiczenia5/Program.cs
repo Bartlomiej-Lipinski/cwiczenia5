@@ -1,15 +1,18 @@
-using cwiczenia5;
-using cwiczenia5.DataBase;
-using cwiczenia5.Models;
+using cwiczenia5.Animals;
+using cwiczenia5.Visits;
 
 var builder = WebApplication.CreateBuilder(args);
-
+// Add services to the container.
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddSingleton<IDb,Db>();
+builder.Services.AddSingleton<IAnimalsService,AnimalService>();
+builder.Services.AddSingleton<IVisitsService,VisitService>();
+builder.Services.AddSingleton<IAnimalsRepository,AnimalsRepository>();
+builder.Services.AddSingleton<IVisitsRepository,VisitsRepository>();
 
 var app = builder.Build();
-
+// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -17,55 +20,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-app.MapGet("/vetClinic/getAnimals", (IDb idb) =>
-{
-    return Results.Ok(idb.GetAllAnimals());
-});
-app.MapGet("/vetClinic/getAnimal/{id}", (IDb idb, int id) =>
-{
-    var animal = idb.GetById(id);
-    if (animal is null)
-    {
-        return Results.NotFound();
-    }
-    return Results.Ok(animal);
-});
-app.MapPost("/vetClinic/addAnimal", (IDb idb, Animal animal) =>
-{
-    idb.Add(animal);
-    return Results.Created($"/vetClinic/getAnimal/{animal.Id}", animal);
-});
-app.MapPut("/vetClinic/modifyAnimal/", (IDb idb, Animal animal) =>
-{
-    idb.Modify(animal);
-    return Results.Ok(animal);
-});
-app.MapDelete("/vetClinic/deleteAnimal/{id}", (IDb idb, int id) =>
-{
-    idb.Delete(id);
-    return Results.Ok();
-});
-app.MapGet("/vetClinic/getVisits/{animalId}", (IDb idb, int animalId) =>
-{
-    if (idb.GetById(animalId) is null)
-    {
-        return Results.NotFound();
-    }
-
-    if (idb.GetVisits(animalId).Count == 0)
-    {
-        return Results.NoContent();
-    }
-    return Results.Ok(idb.GetVisits(animalId));
-});
-app.MapPost("/vetClinic/addVisit/{animalId}", (IDb idb, int animalId, Visit visit) =>
-{
-    if (idb.GetById(animalId)is null)
-    {
-        return Results.NotFound();
-    }
-    idb.AddVisit(animalId, visit);
-    return Results.Created($"/vetClinic/getVisits/{animalId}", visit);
-});
+app.RegisterAnimalsUserEndpoints();
+app.RegisterVisitsUserEndpoints();
 app.Run();
