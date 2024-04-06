@@ -6,7 +6,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddControllers();
 builder.Services.AddSingleton<IDb,Db>();
 
 var app = builder.Build();
@@ -69,5 +68,4 @@ app.MapPost("/vetClinic/addVisit/{animalId}", (IDb idb, int animalId, Visit visi
     idb.AddVisit(animalId, visit);
     return Results.Created($"/vetClinic/getVisits/{animalId}", visit);
 });
-app.MapControllers();
 app.Run();
