@@ -1,13 +1,16 @@
+using cwiczenia5;
+using cwiczenia5.DataBase;
+using cwiczenia5.Models;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddControllers();
+builder.Services.AddSingleton<IDb,Db>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -16,29 +19,55 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
+app.MapGet("/vetClinic/getAnimals", (IDb idb) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
+    return Results.Ok(idb.GetAllAnimals());
+});
+app.MapGet("/vetClinic/getAnimal/{id}", (IDb idb, int id) =>
+{
+    var animal = idb.GetById(id);
+    if (animal is null)
     {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-            .ToArray();
-        return forecast;
-    })
-    .WithName("GetWeatherForecast")
-    .WithOpenApi();
-
-app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+        return Results.NotFound();
+    }
+    return Results.Ok(animal);
+});
+app.MapPost("/vetClinic/addAnimal", (IDb idb, Animal animal) =>
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+    idb.Add(animal);
+    return Results.Created($"/vetClinic/getAnimal/{animal.Id}", animal);
+});
+app.MapPut("/vetClinic/modifyAnimal/", (IDb idb, Animal animal) =>
+{
+    idb.Modify(animal);
+    return Results.Ok(animal);
+});
+app.MapDelete("/vetClinic/deleteAnimal/{id}", (IDb idb, int id) =>
+{
+    idb.Delete(id);
+    return Results.Ok();
+});
+app.MapGet("/vetClinic/getVisits/{animalId}", (IDb idb, int animalId) =>
+{
+    if (idb.GetById(animalId) is null)
+    {
+        return Results.NotFound();
+    }
+
+    if (idb.GetVisits(animalId).Count == 0)
+    {
+        return Results.NoContent();
+    }
+    return Results.Ok(idb.GetVisits(animalId));
+});
+app.MapPost("/vetClinic/addVisit/{animalId}", (IDb idb, int animalId, Visit visit) =>
+{
+    if (idb.GetById(animalId)is null)
+    {
+        return Results.NotFound();
+    }
+    idb.AddVisit(animalId, visit);
+    return Results.Created($"/vetClinic/getVisits/{animalId}", visit);
+});
+app.MapControllers();
+app.Run();
